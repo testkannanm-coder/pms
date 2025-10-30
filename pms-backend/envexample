@@ -1,0 +1,21 @@
+PORT=5000
+DB_USER="postgres"
+DB_PASSWORD="12345"
+DB_HOST="localhost"
+DB_PORT="5432"
+DB_NAME=pmd_db
+JWT_SECRET=my_super_secret_123!@#
+
+# Google OAuth 2.0 Configuration
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:5000/auth/google/callback
+# Frontend URL for redirects
+FRONTEND_URL=http://localhost:5173
+
+# Session Secret
+SESSION_SECRET=your-session-secret-change-in-production-123!@#
+
+# Email Configuration for Password Reset
+EMAIL_USER=
+EMAIL_APP_PASSWORD=your-app-password-here
