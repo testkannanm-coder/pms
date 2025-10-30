@@ -30,16 +30,13 @@ export default function PatientList() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [genderFilter, setGenderFilter] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchPatients();
-  }, [search, statusFilter, genderFilter]);
+  }, []);
 
   const fetchPatients = async () => {
     try {
@@ -47,9 +44,6 @@ export default function PatientList() {
       setError("");
       const token = getToken();
       const data = await getPatients(token, {
-        search,
-        status: statusFilter,
-        gender: genderFilter,
         sortBy: "name",
         sortOrder: "ASC",
       });
@@ -110,44 +104,6 @@ export default function PatientList() {
           {error}
         </Alert>
       )}
-
-      {/* Filters */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <TextField
-          label="Search"
-          variant="outlined"
-          size="small"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Name, email, or phone"
-          sx={{ minWidth: 300 }}
-        />
-        <TextField
-          select
-          label="Status"
-          size="small"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          sx={{ minWidth: 150 }}
-        >
-          <MenuItem value="">All</MenuItem>
-          <MenuItem value="active">Active</MenuItem>
-          <MenuItem value="inactive">Inactive</MenuItem>
-        </TextField>
-        <TextField
-          select
-          label="Gender"
-          size="small"
-          value={genderFilter}
-          onChange={(e) => setGenderFilter(e.target.value)}
-          sx={{ minWidth: 150 }}
-        >
-          <MenuItem value="">All</MenuItem>
-          <MenuItem value="male">Male</MenuItem>
-          <MenuItem value="female">Female</MenuItem>
-          <MenuItem value="other">Other</MenuItem>
-        </TextField>
-      </Box>
 
       <TableContainer component={Paper}>
         <Table>

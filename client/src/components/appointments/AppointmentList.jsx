@@ -1,11 +1,12 @@
 import { useEffect, useState, useContext } from "react";
 import {
   getAppointments,
+  cancelAppointment,
   deleteAppointment,
   changeAppointmentStatus,
 } from "../../api/appointmentApi";
 import { AuthContext } from "../../context/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -17,6 +18,8 @@ import {
   Button,
   Box,
   Typography,
+  TextField,
+  MenuItem,
   Chip,
   CircularProgress,
   Alert,
@@ -25,7 +28,6 @@ import {
   DialogContent,
   DialogActions,
   Select,
-  MenuItem,
   FormControl,
   InputLabel,
 } from "@mui/material";
@@ -36,7 +38,7 @@ export default function AppointmentList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -44,15 +46,14 @@ export default function AppointmentList() {
 
   useEffect(() => {
     fetchAppointments();
-  }, []); // ✅ fixed missing dependency array
+  }, []);
 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
+      setError("");
       const token = getToken();
       const data = await getAppointments(token, {
-        sortBy: "appointment_date",
-        sortOrder: "DESC",
       });
       setAppointments(data || []);
     } catch (err) {
@@ -63,36 +64,54 @@ export default function AppointmentList() {
     }
   };
 
-  const handleDelete = (apt) => {
-    setSelectedAppointment(apt);
+  const handleCancelConfirm = async () => {
+    try {
+      const token = getToken();
+      const result = await cancelAppointment(selectedAppointment.id, token);
+      if (result.success) {
+        fetchAppointments();
+        setCancelDialogOpen(false);
+        setSelectedAppointment(null);
+      } else {
+        setError(result.message || "Failed to cancel appointment");
+      }
+    } catch (err) {
+      setError("Failed to cancel appointment");
+      console.error(err);
+    }
+  };
+
+  const handleDeleteClick = (appointment) => {
+    setSelectedAppointment(appointment);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const handleDeleteConfirm = async () => {
     try {
       const token = getToken();
       const result = await deleteAppointment(selectedAppointment.id, token);
       if (result.success) {
         setSuccess("Appointment deleted successfully");
         fetchAppointments();
+        setDeleteDialogOpen(false);
+        setSelectedAppointment(null);
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         setError(result.message || "Failed to delete appointment");
       }
     } catch (err) {
       setError("Failed to delete appointment");
-    } finally {
-      setDeleteDialogOpen(false);
-      setSelectedAppointment(null);
+      console.error(err);
     }
   };
 
-  const handleStatusChange = (apt) => {
-    setSelectedAppointment(apt);
-    setNewStatus(apt.status);
+  const handleStatusChangeClick = (appointment) => {
+    setSelectedAppointment(appointment);
+    setNewStatus(appointment.status);
     setStatusDialogOpen(true);
   };
 
-  const confirmStatusChange = async () => {
+  const handleStatusChangeConfirm = async () => {
     try {
       const token = getToken();
       const result = await changeAppointmentStatus(
@@ -103,14 +122,15 @@ export default function AppointmentList() {
       if (result.success) {
         setSuccess(`Appointment status changed to ${newStatus}`);
         fetchAppointments();
+        setStatusDialogOpen(false);
+        setSelectedAppointment(null);
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         setError(result.message || "Failed to change status");
       }
     } catch (err) {
       setError("Failed to change status");
-    } finally {
-      setStatusDialogOpen(false);
-      setSelectedAppointment(null);
+      console.error(err);
     }
   };
 
@@ -124,12 +144,13 @@ export default function AppointmentList() {
     return colors[status] || "default";
   };
 
-  if (loading)
+  if (loading && appointments.length === 0) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
         <CircularProgress />
       </Box>
     );
+  }
 
   return (
     <Paper sx={{ p: 4 }}>
@@ -145,13 +166,14 @@ export default function AppointmentList() {
           {error}
         </Alert>
       )}
+
       {success && (
         <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess("")}>
           {success}
         </Alert>
       )}
-
-      <TableContainer>
+      
+      <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
@@ -173,9 +195,9 @@ export default function AppointmentList() {
                 </TableCell>
               </TableRow>
             ) : (
-              appointments.map((apt, i) => (
+              appointments.map((apt, index) => (
                 <TableRow key={apt.id} hover>
-                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>
                     {new Date(apt.appointment_date).toLocaleDateString()}
                   </TableCell>
@@ -197,39 +219,45 @@ export default function AppointmentList() {
                       variant="outlined"
                       size="small"
                       sx={{ mr: 1, mb: 0.5 }}
-                      disabled={apt.status === "completed"}
+                      disabled={
+                        apt.status === "cancelled" || apt.status === "completed"
+                      }
                     >
                       Edit
                     </Button>
-
-                    <Button
-                      onClick={() => handleStatusChange(apt)}
-                      variant="outlined"
-                      color="info"
-                      size="small"
-                      sx={{ mr: 1, mb: 0.5 }}
-                    >
-                      Change Status
-                    </Button>
-
-                    {apt.status === "completed" && (
+                    {apt.status !== "completed" &&
+                      apt.status !== "rescheduled" && (
+                        <Button
+                          onClick={() => handleStatusChangeClick(apt)}
+                          variant="outlined"
+                          color="info"
+                          size="small"
+                          sx={{ mr: 1, mb: 0.5 }}
+                          disabled={apt.status === "cancelled"}
+                        >
+                          Change Status
+                        </Button>
+                      )}
+                    {(apt.status === "completed" ||
+                      apt.status === "rescheduled") && (
                       <Button
                         component={Link}
-                        to={`/medical-records/appointment/${apt.id}`}
+                        to={`/medical-records/appointment/${apt.id}/edit`}
                         variant="contained"
                         color="success"
                         size="small"
                         sx={{ mr: 1, mb: 0.5 }}
                       >
-                        Record
+                        Medical Record
                       </Button>
                     )}
-
                     <Button
-                      onClick={() => handleDelete(apt)}
+                      onClick={() => handleDeleteClick(apt)}
                       variant="outlined"
                       color="error"
                       size="small"
+                      sx={{ mb: 0.5 }}
+                      disabled={apt.status === "completed"}
                     >
                       Delete
                     </Button>
@@ -241,24 +269,65 @@ export default function AppointmentList() {
         </Table>
       </TableContainer>
 
-      {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Appointment</DialogTitle>
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+      >
+        <DialogTitle>Cancel Appointment</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete this appointment permanently?
+          Are you sure you want to cancel the appointment for{" "}
+          <strong>{selectedAppointment?.patient_name}</strong> on{" "}
+          {selectedAppointment &&
+            new Date(selectedAppointment.appointment_date).toLocaleDateString()}
+          ?
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
+          <Button onClick={() => setCancelDialogOpen(false)}>No</Button>
+          <Button
+            onClick={handleCancelConfirm}
+            color="warning"
+            variant="contained"
+          >
+            Yes, Cancel
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Status Dialog */}
-      <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Appointment</DialogTitle>
+        <DialogContent>
+          Are you sure you want to permanently delete this appointment? This
+          action cannot be undone.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>No</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
+            Yes, Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={statusDialogOpen}
+        onClose={() => setStatusDialogOpen(false)}
+      >
         <DialogTitle>Change Appointment Status</DialogTitle>
-        <DialogContent sx={{ minWidth: 300, pt: 2 }}>
+        <DialogContent sx={{ minWidth: 400, pt: 2 }}>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Current appointment for{" "}
+            <strong>{selectedAppointment?.patient_name}</strong> on{" "}
+            {selectedAppointment &&
+              new Date(
+                selectedAppointment.appointment_date
+              ).toLocaleDateString()}
+          </Typography>
           <FormControl fullWidth>
             <InputLabel>New Status</InputLabel>
             <Select
@@ -272,14 +341,24 @@ export default function AppointmentList() {
               <MenuItem value="rescheduled">Rescheduled</MenuItem>
             </Select>
           </FormControl>
+          {(newStatus === "completed" || newStatus === "rescheduled") && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              A medical record will be automatically created when status is
+              changed to "{newStatus}".
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmStatusChange} variant="contained">
-            Change
+          <Button
+            onClick={handleStatusChangeConfirm}
+            color="primary"
+            variant="contained"
+          >
+            Change Status
           </Button>
         </DialogActions>
-      </Dialog> 
+      </Dialog>
     </Paper>
   );
 }

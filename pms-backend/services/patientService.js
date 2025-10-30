@@ -9,47 +9,9 @@ class PatientService {
   // Get all patients with filters
   async getAllPatients(filters = {}) {
     try {
-      let query = "SELECT * FROM patients WHERE 1=1"; // Start with a neutral WHERE clause
-      const params = [];
-      let paramIndex = 1;
+      let query = `SELECT * FROM patients`;
 
-      // Apply filters
-      if (filters.status) {
-        query += ` AND status = $${paramIndex}`;
-        params.push(filters.status);
-        paramIndex++;
-      }
-
-      if (filters.search) {
-        query += ` AND (name ILIKE $${paramIndex} OR email ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`;
-        params.push(`%${filters.search}%`);
-        paramIndex++;
-      }
-
-      if (filters.gender) {
-        query += ` AND gender = $${paramIndex}`;
-        params.push(filters.gender);
-        paramIndex++;
-      }
-
-      // Sorting
-      const sortBy = filters.sortBy || "created_at";
-      const sortOrder = filters.sortOrder || "DESC";
-      query += ` ORDER BY ${sortBy} ${sortOrder}`;
-
-      // Pagination
-      if (filters.limit) {
-        query += ` LIMIT $${paramIndex}`;
-        params.push(filters.limit);
-        paramIndex++;
-      }
-
-      if (filters.offset) {
-        query += ` OFFSET $${paramIndex}`;
-        params.push(filters.offset);
-      }
-
-      const result = await pool.query(query, params);
+      const result = await pool.query(query);
       return result.rows;
     } catch (error) {
       throw error;
@@ -62,27 +24,6 @@ class PatientService {
       const result = await pool.query("SELECT * FROM patients WHERE id = $1", [
         id,
       ]);
-      return result.rows[0];
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Get patient statistics
-  async getPatientStats() {
-    try {
-      const result = await pool.query(
-        `
-      SELECT 
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'active') as active,
-        COUNT(*) FILTER (WHERE status = 'inactive') as inactive,
-        COUNT(*) FILTER (WHERE gender = 'male') as male,
-        COUNT(*) FILTER (WHERE gender = 'female') as female,
-        COUNT(*) FILTER (WHERE gender = 'other') as other
-      FROM patients
-      `
-      );
       return result.rows[0];
     } catch (error) {
       throw error;

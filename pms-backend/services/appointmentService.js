@@ -3,105 +3,22 @@ const medicalRecordService = require('./medicalRecordService');
 
 class AppointmentService {
   // Get all appointments with filters
-  async getAllAppointments(filters = {}) {
+  async getAllAppointments() {
     try {
-      let query = `
+      const result = await pool.query(`
         SELECT a.*, p.name as patient_name, p.phone as patient_phone,
                u.name as doctor_name
         FROM appointments a
         LEFT JOIN patients p ON a.patient_id = p.id
         LEFT JOIN users u ON a.doctor_id = u.id
-        WHERE 1=1
-      `;
-      const params = [];
-      let paramIndex = 1;
-
-      if (filters.status) {
-        query += ` AND a.status = $${paramIndex}`;
-        params.push(filters.status);
-        paramIndex++;
-      }
-
-      if (filters.patient_id) {
-        query += ` AND a.patient_id = $${paramIndex}`;
-        params.push(filters.patient_id);
-        paramIndex++;
-      }
-
-      if (filters.startDate) {
-        query += ` AND a.appointment_date >= $${paramIndex}`;
-        params.push(filters.startDate);
-        paramIndex++;
-      }
-
-      if (filters.endDate) {
-        query += ` AND a.appointment_date <= $${paramIndex}`;
-        params.push(filters.endDate);
-        paramIndex++;
-      }
-
-      const sortBy = filters.sortBy || 'appointment_date';
-      const sortOrder = filters.sortOrder || 'DESC';
-      query += ` ORDER BY a.${sortBy} ${sortOrder}`;
-
-      const result = await pool.query(query, params);
-      return result.rows;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Get today's appointments
-  async getTodaysAppointments() {
-    try {
-      const result = await pool.query(`
-        SELECT a.*, p.name as patient_name, p.phone as patient_phone
-        FROM appointments a
-        LEFT JOIN patients p ON a.patient_id = p.id
-        WHERE a.appointment_date = CURRENT_DATE
-        ORDER BY a.appointment_time ASC
+        ORDER BY a.appointment_date DESC, a.appointment_time ASC
       `);
       return result.rows;
     } catch (error) {
       throw error;
     }
   }
-
-  // Get upcoming appointments
-  async getUpcomingAppointments(days = 7) {
-    try {
-      const result = await pool.query(`
-        SELECT a.*, p.name as patient_name
-        FROM appointments a
-        LEFT JOIN patients p ON a.patient_id = p.id
-        WHERE a.appointment_date BETWEEN CURRENT_DATE AND CURRENT_DATE + $1
-        AND a.status = 'scheduled'
-        ORDER BY a.appointment_date ASC, a.appointment_time ASC
-      `, [days]);
-      return result.rows;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Get appointment statistics
-  async getAppointmentStats() {
-    try {
-      const result = await pool.query(`
-        SELECT 
-          COUNT(*) as total_appointments,
-          COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled_count,
-          COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
-          COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_count,
-          COUNT(*) FILTER (WHERE appointment_date = CURRENT_DATE) as today_count
-        FROM appointments
-      `);
-      return result.rows[0];
-    } catch (error) {
-      throw error;
-    }
-  }
-
+  
   // Get appointment by ID
   async getAppointmentById(id) {
     try {

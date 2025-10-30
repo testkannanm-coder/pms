@@ -10,7 +10,6 @@ import {
     Box,
     Alert,
     MenuItem,
-    CircularProgress,
 } from "@mui/material";
 
 export default function EditUser() {
@@ -94,14 +93,6 @@ export default function EditUser() {
         }
     };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Paper sx={{ p: 4 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
@@ -164,9 +155,6 @@ export default function EditUser() {
                 <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
                     <Button type="submit" variant="contained" disabled={submitting}>
                         {submitting ? "Updating..." : "Update User"}
-                    </Button>
-                    <Button variant="outlined" onClick={() => navigate("/users")}>
-                        Cancel
                     </Button>
                 </Box>
             </Box>

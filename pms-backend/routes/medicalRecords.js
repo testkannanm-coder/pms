@@ -1,17 +1,8 @@
-// ============================================
-// Medical Records Routes
-// RESTful API endpoints for medical records management
-// ============================================
-
 const express = require('express');
 const router = express.Router();
 const medicalRecordService = require('../services/medicalRecordService');
 const activityLogService = require('../services/activityLogService');
 const authMiddleware = require('../middleware/authMiddleware');
-
-// ============================================
-// GET ROUTES
-// ============================================
 
 // Get all medical records (with filters)
 router.get('/', authMiddleware, async (req, res) => {
@@ -77,10 +68,6 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// ============================================
-// POST ROUTES
-// ============================================
-
 // Create medical record
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -111,10 +98,6 @@ router.post('/:id/prescriptions', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to add prescription', error: error.message });
   }
 });
-
-// ============================================
-// PUT ROUTES
-// ============================================
 
 // Update medical record
 router.put('/:id', authMiddleware, async (req, res) => {
@@ -154,10 +137,6 @@ router.put('/prescriptions/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to update prescription', error: error.message });
   }
 });
-
-// ============================================
-// DELETE ROUTES
-// ============================================
 
 // Delete medical record
 router.delete('/:id', authMiddleware, async (req, res) => {

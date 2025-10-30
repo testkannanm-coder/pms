@@ -1,12 +1,8 @@
 const API_URL = 'http://localhost:5000';
 
-// Get all users (for admin)
-export const getUsers = async (token, filters = {}) => {
-  const params = new URLSearchParams();
-  if (filters.role) params.append('role', filters.role);
-  
-  const queryString = params.toString();
-  const url = `${API_URL}/auth/users${queryString ? `?${queryString}` : ''}`;
+// Get all users
+export const getUsers = async (token) => {
+  const url = `${API_URL}/auth/users`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },

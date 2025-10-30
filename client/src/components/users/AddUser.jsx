@@ -144,9 +144,6 @@ export default function AddUser() {
                     <Button type="submit" variant="contained" disabled={loading}>
                         {loading ? "Creating..." : "Add User"}
                     </Button>
-                    <Button variant="outlined" onClick={() => navigate("/users")}>
-                        Cancel
-                    </Button>
                 </Box>
             </Box>
         </Paper>

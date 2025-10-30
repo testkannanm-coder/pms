@@ -1,15 +1,10 @@
-// ============================================
-// Medical Record Service
-// Business logic for medical records and prescriptions
-// ============================================
-
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 class MedicalRecordService {
-  // Get all medical records with filters
-  async getAllMedicalRecords(filters = {}) {
+  // Get all medical records
+  async getAllMedicalRecords() {
     try {
-      let query = `
+      const query = `
         SELECT 
           mr.*,
           p.name as patient_name,
@@ -21,32 +16,10 @@ class MedicalRecordService {
         LEFT JOIN patients p ON mr.patient_id = p.id
         LEFT JOIN users u ON mr.user_id = u.id
         LEFT JOIN appointments a ON mr.appointment_id = a.id
-        WHERE 1=1
+        ORDER BY mr.visit_date DESC, mr.created_at DESC
       `;
-      const params = [];
-      let paramIndex = 1;
 
-      if (filters.patient_id) {
-        query += ` AND mr.patient_id = $${paramIndex}`;
-        params.push(filters.patient_id);
-        paramIndex++;
-      }
-
-      if (filters.startDate) {
-        query += ` AND mr.visit_date >= $${paramIndex}`;
-        params.push(filters.startDate);
-        paramIndex++;
-      }
-
-      if (filters.endDate) {
-        query += ` AND mr.visit_date <= $${paramIndex}`;
-        params.push(filters.endDate);
-        paramIndex++;
-      }
-
-      query += ` ORDER BY mr.visit_date DESC, mr.created_at DESC`;
-
-      const result = await pool.query(query, params);
+      const result = await pool.query(query);
       return result.rows;
     } catch (error) {
       throw error;
@@ -74,7 +47,7 @@ class MedicalRecordService {
         LEFT JOIN appointments a ON mr.appointment_id = a.id
         WHERE mr.id = $1
       `;
-      
+
       const result = await pool.query(query, [id]);
       if (result.rows.length === 0) return null;
 
@@ -112,7 +85,7 @@ class MedicalRecordService {
         LEFT JOIN users u ON mr.user_id = u.id
         WHERE mr.appointment_id = $1
       `;
-      
+
       const result = await pool.query(query, [appointmentId]);
       if (result.rows.length === 0) return null;
 
@@ -147,7 +120,7 @@ class MedicalRecordService {
         WHERE mr.patient_id = $1
         ORDER BY mr.visit_date DESC
       `;
-      
+
       const result = await pool.query(query, [patientId]);
       return result.rows;
     } catch (error) {
@@ -167,7 +140,7 @@ class MedicalRecordService {
         treatment,
         notes,
         follow_up_required,
-        follow_up_date
+        follow_up_date,
       } = recordData;
 
       const query = `
@@ -184,12 +157,12 @@ class MedicalRecordService {
         patient_id,
         appointment_id || null,
         visit_date || new Date(),
-        symptoms || '',
-        diagnosis || '',
-        treatment || '',
-        notes || '',
+        symptoms || "",
+        diagnosis || "",
+        treatment || "",
+        notes || "",
         follow_up_required || false,
-        follow_up_date || null
+        follow_up_date || null,
       ];
 
       const result = await pool.query(query, values);
@@ -208,7 +181,7 @@ class MedicalRecordService {
         treatment,
         notes,
         follow_up_required,
-        follow_up_date
+        follow_up_date,
       } = recordData;
 
       const query = `
@@ -233,7 +206,7 @@ class MedicalRecordService {
         notes,
         follow_up_required,
         follow_up_date || null,
-        id
+        id,
       ];
 
       const result = await pool.query(query, values);
@@ -251,7 +224,7 @@ class MedicalRecordService {
         WHERE id = $1
         RETURNING id
       `;
-      
+
       const result = await pool.query(query, [id]);
       return result.rows.length > 0;
     } catch (error) {
@@ -269,7 +242,7 @@ class MedicalRecordService {
         duration,
         quantity,
         refills,
-        instructions
+        instructions,
       } = prescriptionData;
 
       const query = `
@@ -279,7 +252,6 @@ class MedicalRecordService {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
       `;
-
       const values = [
         medicalRecordId,
         medication_name,
@@ -288,9 +260,8 @@ class MedicalRecordService {
         duration,
         quantity || 0,
         refills || 0,
-        instructions || ''
+        instructions || "",
       ];
-
       const result = await pool.query(query, values);
       return result.rows[0];
     } catch (error) {
@@ -308,7 +279,7 @@ class MedicalRecordService {
         duration,
         quantity,
         refills,
-        instructions
+        instructions,
       } = prescriptionData;
 
       const query = `
@@ -333,7 +304,7 @@ class MedicalRecordService {
         quantity,
         refills,
         instructions,
-        id
+        id,
       ];
 
       const result = await pool.query(query, values);
@@ -354,6 +325,5 @@ class MedicalRecordService {
     }
   }
 }
-
 
 module.exports = new MedicalRecordService();

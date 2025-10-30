@@ -161,38 +161,6 @@ export default function ActivityLogsList() {
                 </Alert>
             )}
 
-            {/* Filters */}
-            <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                    Filters
-                </Typography>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                    <TextField
-                        select
-                        label="Type"
-                        name="entity_type"
-                        value={filters.entity_type}
-                        onChange={handleFilterChange}
-                        size="small"
-                        sx={{ minWidth: 180 }}
-                    >
-                        <MenuItem value="">All Entities</MenuItem>
-                        <MenuItem value="patient">Patient</MenuItem>
-                        <MenuItem value="appointment">Appointment</MenuItem>
-                        <MenuItem value="medical_record">Medical Record</MenuItem>
-                        <MenuItem value="user">User</MenuItem>
-                    </TextField>
-
-                    <Button
-                        variant="outlined"
-                        onClick={handleClearFilters}
-                        size="small"
-                    >
-                        Clear Filters
-                    </Button>
-                </Stack>
-            </Paper>
-
             {loading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                     <CircularProgress />
