@@ -178,7 +178,7 @@ router.post("/forgot-password", async (req, res) => {
 
     // ✅ Save token to DB
     await pool.query(
-      "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3",
+      "UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3",
       [hashedToken, expiryTime, user.id]
     );
 
@@ -197,7 +197,7 @@ router.post("/forgot-password", async (req, res) => {
 
       // Roll back token if email fails
       await pool.query(
-        "UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = $1",
+        "UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $1",
         [user.id]
       );
 
@@ -231,7 +231,7 @@ router.post("/reset-password", async (req, res) => {
 
     // Find user with valid token
     const result = await pool.query(
-      "SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > $2",
+      "SELECT * FROM users WHERE reset_token = $1 AND reset_token_expiry > $2",
       [hashedToken, new Date()]
     );
 
@@ -249,7 +249,7 @@ router.post("/reset-password", async (req, res) => {
 
     // Update password and clear reset token
     await pool.query(
-      "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2",
+      "UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2",
       [hashedPassword, user.id]
     );
 
