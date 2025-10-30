@@ -279,7 +279,7 @@ export default function AppointmentList() {
             Change
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> 
     </Paper>
   );
 }
