@@ -4,6 +4,7 @@
 -- ============================================
 
 -- Drop existing tables if they exist (cascade)
+DROP TABLE IF EXISTS bills CASCADE;
 DROP TABLE IF EXISTS activity_logs CASCADE;
 DROP TABLE IF EXISTS prescriptions CASCADE;
 DROP TABLE IF EXISTS medical_records CASCADE;
@@ -125,11 +126,29 @@ CREATE TABLE activity_logs (
 );
 
 -- ============================================
+-- BILLS TABLE
+-- Simple billing for completed/rescheduled appointments
+-- ============================================
+CREATE TABLE bills (
+    id SERIAL PRIMARY KEY,
+    bill_number VARCHAR(50) UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    appointment_id INTEGER NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    consultation_fee DECIMAL(10, 2) DEFAULT 500.00,
+    additional_charges DECIMAL(10, 2) DEFAULT 0.00,
+    discount DECIMAL(10, 2) DEFAULT 0.00,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'cancelled')),
+    payment_method VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
 -- INDEXES for Performance Optimization
 -- ============================================
-CREATE INDEX idx_patients_user_id ON patients(user_id);
-CREATE INDEX idx_patients_status ON patients(status);
-CREATE INDEX idx_patients_name ON patients(name);
 CREATE INDEX idx_patients_user_id ON patients(user_id);
 CREATE INDEX idx_patients_status ON patients(status);
 CREATE INDEX idx_patients_name ON patients(name);
@@ -143,6 +162,9 @@ CREATE INDEX idx_medical_records_date ON medical_records(visit_date);
 CREATE INDEX idx_prescriptions_record_id ON prescriptions(medical_record_id);
 CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
 CREATE INDEX idx_activity_logs_entity ON activity_logs(entity_type, entity_id);
+CREATE INDEX idx_bills_patient_id ON bills(patient_id);
+CREATE INDEX idx_bills_appointment_id ON bills(appointment_id);
+CREATE INDEX idx_bills_payment_status ON bills(payment_status);
 
 -- ============================================
 -- TRIGGERS for Updated_at Timestamps
@@ -170,12 +192,15 @@ CREATE TRIGGER update_medical_records_updated_at BEFORE UPDATE ON medical_record
 CREATE TRIGGER update_prescriptions_updated_at BEFORE UPDATE ON prescriptions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_bills_updated_at BEFORE UPDATE ON bills
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ============================================
 -- SEED DATA (Optional - for testing)
 -- ============================================
 -- Create default admin user (password: admin123)
 INSERT INTO users (name, email, password, role) VALUES
-('Admin User', 'admin@pms.com', '$10$YsChRG2930ocaqecE1Wy/e44xjop/8x4VtMcF3z71Qys4W5WaFN/O', 'admin');
+('Admin User', 'admin@pms.com', '$2b$10$YsChRG2930ocaqecE1Wy/e44xjop/8x4VtMcF3z71Qys4W5WaFN/O', 'admin');
 
 -- Note: Password hash for 'admin123' generated with bcrypt
 -- To generate: bcrypt.hash('admin123', 10)

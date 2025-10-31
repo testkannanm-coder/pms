@@ -35,6 +35,9 @@ export default function Navbar() {
           <Button color="inherit" onClick={() => navigate("/appointments")}>
             Appointments
           </Button>
+          <Button color="inherit" onClick={() => navigate("/bills")}>
+            Bills
+          </Button>
           <Button color="inherit" onClick={() => navigate("/users")}>
             Users
           </Button>

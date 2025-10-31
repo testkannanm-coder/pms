@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const appointmentService = require('../services/appointmentService');
 const activityLogService = require('../services/activityLogService');
+const billService = require('../services/billService');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Get all appointments (with filters)
@@ -109,6 +110,35 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
       ...currentAppointment,
       status: status
     });
+
+    // Generate bill if status is completed or rescheduled
+    if (status === 'completed' || status === 'rescheduled') {
+      // Check if bill already exists for this appointment
+      const existingBill = await billService.getBillByAppointmentId(req.params.id, userId);
+      
+      if (!existingBill) {
+        // Create a new bill
+        const billData = {
+          patient_id: appointment.patient_id,
+          appointment_id: appointment.id,
+          consultation_fee: 500.00, // Default consultation fee
+          additional_charges: status === 'rescheduled' ? 100.00 : 0.00, // Rescheduling fee
+          discount: 0.00,
+          notes: status === 'completed' ? 'Consultation completed' : 'Appointment rescheduled'
+        };
+        
+        const bill = await billService.createBill(userId, billData);
+        
+        // Log activity
+        activityLogService.logActivity('UPDATE', 'appointment', req);
+        
+        return res.json({ 
+          success: true, 
+          data: { appointment, bill }, 
+          message: `Appointment status changed to ${status} and bill generated` 
+        });
+      }
+    }
 
     // Log activity
     activityLogService.logActivity('UPDATE', 'appointment', req);

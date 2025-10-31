@@ -18,6 +18,8 @@ import EditUser from "./components/users/EditUser";
 import ViewMedicalRecord from "./components/medical-records/ViewMedicalRecord";
 import EditMedicalRecord from "./components/medical-records/EditMedicalRecord";
 import ActivityLogsList from "./components/activity-logs/ActivityLogsList";
+import BillList from "./components/bills/BillList";
+import ViewBill from "./components/bills/ViewBill";
 import Profile from "./components/common/Profile";
 import Layout from "./components/layout/Layout";
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -54,6 +56,10 @@ export default function AppRoutes() {
           {/* Medical Records Routes */}
           <Route path="/medical-records/appointment/:appointmentId" element={<ViewMedicalRecord />} />
           <Route path="/medical-records/appointment/:appointmentId/edit" element={<EditMedicalRecord />} />
+
+          {/* Bill Routes */}
+          <Route path="/bills" element={<BillList />} />
+          <Route path="/bills/:id" element={<ViewBill />} />
 
           {/* Activity Logs Route */}
           <Route path="/activity-logs" element={<ActivityLogsList />} />
