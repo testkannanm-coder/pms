@@ -142,120 +142,148 @@ export default function AddAppointment() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <Autocomplete
-          options={patients}
-          getOptionLabel={(option) => `${option.name} (${option.patientid})`}
-          loading={loadingPatients}
-          value={selectedPatient}
-          onChange={handlePatientChange}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Patient"
-              margin="normal"
-              required
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {loadingPatients ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-        />
-
-        <Autocomplete
-          options={doctors}
-          getOptionLabel={(option) => `${option.name} - ${option.role}`}
-          loading={loadingDoctors}
-          value={selectedDoctor}
-          onChange={handleDoctorChange}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Doctor (Optional)"
-              margin="normal"
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {loadingDoctors ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-        />
-
-        <TextField
-          label="Appointment Date"
-          type="date"
-          fullWidth
-          margin="normal"
-          name="appointment_date"
-          value={form.appointment_date}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          inputProps={{ min: new Date().toISOString().split("T")[0] }}
-          required
-        />
-
-        <TextField
-          label="Appointment Time"
-          type="time"
-          fullWidth
-          margin="normal"
-          name="appointment_time"
-          value={form.appointment_time}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          required
-        />
-
-        <TextField
-          label="Reason for Visit"
-          fullWidth
-          margin="normal"
-          name="reason"
-          value={form.reason}
-          onChange={handleChange}
-          multiline
-          rows={2}
-          required
-        />
-
-        <TextField
-          label="Notes"
-          fullWidth
-          margin="normal"
-          name="notes"
-          value={form.notes}
-          onChange={handleChange}
-          multiline
-          rows={3}
-          placeholder="Any additional notes or instructions"
-        />
-
-        <TextField
-          select
-          label="Status"
-          fullWidth
-          margin="normal"
-          name="status"
-          value={form.status}
-          onChange={handleChange}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
         >
-          <MenuItem value="scheduled">Scheduled</MenuItem>
-          <MenuItem value="rescheduled">Rescheduled</MenuItem>
-        </TextField>
+          <Box>
+            <Autocomplete
+              options={patients}
+              getOptionLabel={(option) => `${option.name} (${option.patientid})`}
+              loading={loadingPatients}
+              value={selectedPatient}
+              onChange={handlePatientChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Patient"
+                  margin="normal"
+                  required
+                  fullWidth
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingPatients ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Box>
 
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
-          Schedule Appointment
-        </Button>
+          <Box>
+            <Autocomplete
+              options={doctors}
+              getOptionLabel={(option) => `${option.name} - ${option.role}`}
+              loading={loadingDoctors}
+              value={selectedDoctor}
+              onChange={handleDoctorChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Doctor"
+                  margin="normal"
+                  required
+                  fullWidth
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingDoctors ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Box>
+
+          <Box>
+            <TextField
+              label="Appointment Date"
+              type="date"
+              fullWidth
+              margin="normal"
+              name="appointment_date"
+              value={form.appointment_date}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: new Date().toISOString().split("T")[0] }}
+              required
+            />
+          </Box>
+
+          <Box>
+            <TextField
+              label="Appointment Time"
+              type="time"
+              fullWidth
+              margin="normal"
+              name="appointment_time"
+              value={form.appointment_time}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+          </Box>
+
+          <Box>
+            <TextField
+              label="Reason for Visit"
+              fullWidth
+              margin="normal"
+              name="reason"
+              value={form.reason}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              required
+            />
+          </Box>
+
+          <Box>
+             <TextField
+              label="Notes"
+              fullWidth
+              margin="normal"
+              name="notes"
+              value={form.notes}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              placeholder="Any additional notes or instructions"
+            />
+            
+          </Box>
+
+          <Box >
+            <TextField
+              select
+              label="Status"
+              fullWidth
+              margin="normal"
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+            >
+              <MenuItem value="scheduled">Scheduled</MenuItem>
+              <MenuItem value="rescheduled">Rescheduled</MenuItem>
+            </TextField>
+          </Box>
+
+          <Box sx={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-start" }}>
+            <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
+              Schedule Appointment
+            </Button>
+          </Box>
+        </Box>
       </form>
     </Paper>
   );

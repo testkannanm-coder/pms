@@ -242,7 +242,7 @@ export default function AppointmentList() {
                       apt.status === "rescheduled") && (
                       <Button
                         component={Link}
-                        to={`/medical-records/appointment/${apt.id}/edit`}
+                        to={`/medical-records/appointment/${apt.id}`}
                         variant="contained"
                         color="success"
                         size="small"

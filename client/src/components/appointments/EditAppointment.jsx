@@ -211,8 +211,9 @@ export default function EditAppointment() {
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Doctor (Optional)"
+              label="Doctor"
               margin="normal"
+              required
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (
