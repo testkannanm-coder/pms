@@ -140,9 +140,6 @@ export default function ViewMedicalRecord() {
               <Typography>
                 <strong>Blood Type:</strong> {patientInfo.blood_type || "N/A"}
               </Typography>
-              <Typography>
-                <strong>Allergies:</strong> {patientInfo.allergies || "N/A"}
-              </Typography>
             </>
           </Box>
         )}
