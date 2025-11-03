@@ -1,9 +1,3 @@
--- ============================================
--- Patient Management System - Database Schema
--- PostgreSQL Schema with Complete Structure
--- ============================================
-
--- Drop existing tables if they exist (cascade)
 DROP TABLE IF EXISTS bills CASCADE;
 DROP TABLE IF EXISTS activity_logs CASCADE;
 DROP TABLE IF EXISTS prescriptions CASCADE;
@@ -12,10 +6,6 @@ DROP TABLE IF EXISTS appointments CASCADE;
 DROP TABLE IF EXISTS patients CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- ============================================
--- USERS TABLE
--- Stores authentication and user role data
--- ============================================
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -30,10 +20,6 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- PATIENTS TABLE
--- Core patient demographic information
--- ============================================
 CREATE TABLE patients (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -53,10 +39,6 @@ CREATE TABLE patients (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- APPOINTMENTS TABLE
--- Scheduling and appointment management
--- ============================================
 CREATE TABLE appointments (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -71,10 +53,6 @@ CREATE TABLE appointments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- MEDICAL RECORDS TABLE
--- Patient visit records and diagnoses
--- ============================================
 CREATE TABLE medical_records (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -91,10 +69,6 @@ CREATE TABLE medical_records (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- PRESCRIPTIONS TABLE
--- Medication prescriptions per medical record
--- ============================================
 CREATE TABLE prescriptions (
     id SERIAL PRIMARY KEY,
     medical_record_id INTEGER NOT NULL REFERENCES medical_records(id) ON DELETE CASCADE,
@@ -109,10 +83,6 @@ CREATE TABLE prescriptions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- ACTIVITY LOGS TABLE
--- Audit trail for all critical actions
--- ============================================
 CREATE TABLE activity_logs (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -125,10 +95,6 @@ CREATE TABLE activity_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- BILLS TABLE
--- Simple billing for completed/rescheduled appointments
--- ============================================
 CREATE TABLE bills (
     id SERIAL PRIMARY KEY,
     bill_number VARCHAR(50) UNIQUE NOT NULL,
@@ -146,9 +112,6 @@ CREATE TABLE bills (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- INDEXES for Performance Optimization
--- ============================================
 CREATE INDEX idx_patients_user_id ON patients(user_id);
 CREATE INDEX idx_patients_status ON patients(status);
 CREATE INDEX idx_patients_name ON patients(name);
@@ -166,9 +129,6 @@ CREATE INDEX idx_bills_patient_id ON bills(patient_id);
 CREATE INDEX idx_bills_appointment_id ON bills(appointment_id);
 CREATE INDEX idx_bills_payment_status ON bills(payment_status);
 
--- ============================================
--- TRIGGERS for Updated_at Timestamps
--- ============================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -195,12 +155,5 @@ CREATE TRIGGER update_prescriptions_updated_at BEFORE UPDATE ON prescriptions
 CREATE TRIGGER update_bills_updated_at BEFORE UPDATE ON bills
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ============================================
--- SEED DATA (Optional - for testing)
--- ============================================
--- Create default admin user (password: admin123)
 INSERT INTO users (name, email, password, role) VALUES
 ('Admin User', 'admin@pms.com', '$2b$10$YsChRG2930ocaqecE1Wy/e44xjop/8x4VtMcF3z71Qys4W5WaFN/O', 'admin');
-
--- Note: Password hash for 'admin123' generated with bcrypt
--- To generate: bcrypt.hash('admin123', 10)
