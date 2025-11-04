@@ -1,11 +1,5 @@
 import React, { useContext } from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Stack,
-} from "@mui/material";
+import { AppBar, Toolbar, Typography, Button, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -40,6 +34,9 @@ export default function Navbar() {
           </Button>
           <Button color="inherit" onClick={() => navigate("/users")}>
             Users
+          </Button>
+          <Button color="inherit" onClick={() => navigate("/reports")}>
+            Reports
           </Button>
           <Button color="inherit" onClick={() => navigate("/activity-logs")}>
             Activity Logs

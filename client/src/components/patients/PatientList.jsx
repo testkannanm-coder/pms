@@ -13,8 +13,6 @@ import {
   Button,
   Box,
   Typography,
-  TextField,
-  MenuItem,
   Chip,
   CircularProgress,
   Alert,
@@ -131,7 +129,14 @@ export default function PatientList() {
                 <TableRow key={p.id} hover>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
-                    <Link to={`/patients/${p.id}`} style={{ textDecoration: "none", color: "inherit", fontWeight: 600 }}>
+                    <Link
+                      to={`/patients/${p.id}`}
+                      style={{
+                        textDecoration: "none",
+                        color: "inherit",
+                        fontWeight: 600,
+                      }}
+                    >
                       {p.patientid}
                     </Link>
                   </TableCell>
@@ -140,24 +145,46 @@ export default function PatientList() {
                   <TableCell>{p.phone}</TableCell>
                   <TableCell>{p.gender}</TableCell>
                   <TableCell>
-                    <Chip label={p.status} size="small" color={getStatusColor(p.status)} />
+                    <Chip
+                      label={p.status}
+                      size="small"
+                      color={getStatusColor(p.status)}
+                    />
                   </TableCell>
                   <TableCell>
-                    <Button variant="outlined" size="small" onClick={() => navigate(`/patients/${p.id}`)} sx={{ mr: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => navigate(`/patients/${p.id}`)}
+                      sx={{ mr: 1 }}
+                    >
                       View
                     </Button>
                     <Button
                       variant="contained"
                       size="small"
-                      onClick={() => navigate(`/appointments/add?patientId=${p.id}`)}
+                      onClick={() =>
+                        navigate(`/appointments/add?patientId=${p.id}`)
+                      }
                       sx={{ mr: 1 }}
                     >
                       Book
                     </Button>
-                    <Button component={Link} to={`/patients/${p.id}/edit`} variant="outlined" size="small" sx={{ mr: 1 }}>
+                    <Button
+                      component={Link}
+                      to={`/patients/${p.id}/edit`}
+                      variant="outlined"
+                      size="small"
+                      sx={{ mr: 1 }}
+                    >
                       Edit
                     </Button>
-                    <Button onClick={() => handleDeleteClick(p)} variant="outlined" color="error" size="small">
+                    <Button
+                      onClick={() => handleDeleteClick(p)}
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                    >
                       Delete
                     </Button>
                   </TableCell>
@@ -168,16 +195,23 @@ export default function PatientList() {
         </Table>
       </TableContainer>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete patient <strong>{selectedPatient?.name}</strong>? This action cannot be undone and
-          will delete all associated appointments and medical records.
+          Are you sure you want to delete patient{" "}
+          <strong>{selectedPatient?.name}</strong>? This action cannot be undone
+          and will delete all associated appointments and medical records.
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

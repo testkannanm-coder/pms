@@ -22,6 +22,7 @@ import BillList from "./components/bills/BillList";
 import ViewBill from "./components/bills/ViewBill";
 import Profile from "./components/common/Profile";
 import Layout from "./components/layout/Layout";
+import ReportList from "./components/reports/ReportList";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 export default function AppRoutes() {
@@ -42,6 +43,7 @@ export default function AppRoutes() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
 
+          <Route path="/reports" element={<ReportList />} />
           {/* Patient Routes */}
           <Route path="/patients" element={<PatientList />} />
           <Route path="/patients/add" element={<AddPatient />} />
@@ -54,8 +56,14 @@ export default function AppRoutes() {
           <Route path="/appointments/:id/edit" element={<EditAppointment />} />
 
           {/* Medical Records Routes */}
-          <Route path="/medical-records/appointment/:appointmentId" element={<ViewMedicalRecord />} />
-          <Route path="/medical-records/appointment/:appointmentId/edit" element={<EditMedicalRecord />} />
+          <Route
+            path="/medical-records/appointment/:appointmentId"
+            element={<ViewMedicalRecord />}
+          />
+          <Route
+            path="/medical-records/appointment/:appointmentId/edit"
+            element={<EditMedicalRecord />}
+          />
 
           {/* Bill Routes */}
           <Route path="/bills" element={<BillList />} />
