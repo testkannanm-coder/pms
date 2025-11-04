@@ -1,8 +1,3 @@
-// ============================================
-// Bill API
-// API calls for bill management
-// ============================================
-
 const API_URL = 'http://localhost:5000';
 
 // Get all bills
