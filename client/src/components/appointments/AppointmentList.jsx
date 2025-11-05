@@ -188,7 +188,7 @@ export default function AppointmentList() {
           {success}
         </Alert>
       )}
-      
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -256,17 +256,17 @@ export default function AppointmentList() {
                       )}
                     {(apt.status === "completed" ||
                       apt.status === "rescheduled") && (
-                      <Button
-                        component={Link}
-                        to={`/medical-records/appointment/${apt.id}`}
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        sx={{ mr: 1, mb: 0.5 }}
-                      >
-                        Medical Record
-                      </Button>
-                    )}
+                        <Button
+                          component={Link}
+                          to={`/medical-records/appointment/${apt.id}`}
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          sx={{ mr: 1, mb: 0.5 }}
+                        >
+                          Medical Record
+                        </Button>
+                      )}
                     <Button
                       onClick={() => handleViewReports(apt)}
                       variant="outlined"

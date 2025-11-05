@@ -31,7 +31,7 @@ export default function ReportList() {
   // Report type options
   const reportTypes = [
     "Blood Test",
-    "X-Ray", 
+    "X-Ray",
     "MRI Scan",
     "CT Scan",
     "Ultrasound",
@@ -49,25 +49,25 @@ export default function ReportList() {
       setLoading(true);
       const token = getToken();
       console.log("Token:", token);
-      
+
       const [reportsRes, appointmentsRes] = await Promise.all([
-        getReports(token), 
+        getReports(token),
         getAppointments(token)
       ]);
-      
+
       console.log("Raw API responses:", {
         reportsRes,
         appointmentsRes
       });
-      
+
       setReports(reportsRes.data || []);
       setAppointments(appointmentsRes || []);
-      
-      console.log("Final state data:", { 
+
+      console.log("Final state data:", {
         reports: reportsRes.data || [],
         appointments: appointmentsRes || []
       });
-      
+
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err.message || "Failed to load data");
@@ -77,8 +77,8 @@ export default function ReportList() {
   };
 
   const handleAppointmentChange = (appointmentId) => {
-    setFormData({ 
-      ...formData, 
+    setFormData({
+      ...formData,
       appointment_id: appointmentId
     });
   };
@@ -87,9 +87,9 @@ export default function ReportList() {
     setMode(editMode ? "edit" : "create");
     if (editMode && report) {
       setSelectedReport(report);
-      setFormData({ 
-        appointment_id: report.appointment_id || "", 
-        report_type: report.report_type, 
+      setFormData({
+        appointment_id: report.appointment_id || "",
+        report_type: report.report_type,
         report_date: report.report_date
       });
     } else {
@@ -98,34 +98,34 @@ export default function ReportList() {
     setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => { 
-    setOpenDialog(false); 
-    setError(""); 
-    setSuccess(""); 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setError("");
+    setSuccess("");
     setSelectedFiles([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setError(""); 
+      setError("");
       setSuccess("");
-      
+
       // Validation
       if (!formData.appointment_id || !formData.report_type || !formData.report_date) {
         setError("Please fill all required fields: Appointment, Report Type, and Report Date");
         return;
       }
-      
+
       const token = getToken();
       console.log("Submitting report data:", formData);
-      
+
       const result = mode === "create" ? await createReport(formData, token) : await updateReport(selectedReport.id, formData, token);
       console.log("Report creation result:", result);
-      
+
       if (result.success) {
         const reportId = mode === "create" ? result.data.id : selectedReport.id;
-        
+
         // Upload files if any selected
         if (selectedFiles.length > 0) {
           console.log("Uploading files:", selectedFiles);
@@ -140,7 +140,7 @@ export default function ReportList() {
         } else {
           setSuccess(result.message);
         }
-        
+
         await fetchData();
         setTimeout(() => handleCloseDialog(), 1500);
       } else {
@@ -159,10 +159,10 @@ export default function ReportList() {
       setSuccess("");
       const token = getToken();
       console.log("Deleting report:", selectedReport.id);
-      
+
       const result = await deleteReport(selectedReport.id, token);
       console.log("Delete result:", result);
-      
+
       if (result.success) {
         setSuccess(result.message);
         await fetchData();
@@ -225,7 +225,7 @@ export default function ReportList() {
       </Box>
       {error && <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" onClose={() => setSuccess("")} sx={{ mb: 2 }}>{success}</Alert>}
-      
+
       {/* Debug info */}
       {process.env.NODE_ENV === 'development' && (
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -411,7 +411,7 @@ export default function ReportList() {
                   <Typography>{selectedReport.patientid} - {selectedReport.patient_name}</Typography>
                 </Box>
               </Box>
-              
+
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle2" color="textSecondary">Report Type</Typography>
@@ -422,7 +422,7 @@ export default function ReportList() {
                   <Typography>{new Date(selectedReport.report_date).toLocaleDateString()}</Typography>
                 </Box>
               </Box>
-              
+
               <Divider sx={{ my: 1 }} />
               <Typography variant="h6">Attached Documents ({selectedReport.documents?.length || 0})</Typography>
               {selectedReport.documents && selectedReport.documents.length > 0 ? (
@@ -431,9 +431,9 @@ export default function ReportList() {
                     <ListItem key={doc.id}>
                       <ListItemText primary={doc.file_name} secondary={`${(doc.file_size / 1024).toFixed(2)} KB`} />
                       <ListItemSecondaryAction>
-                        <IconButton 
-                          edge="end" 
-                          color="primary" 
+                        <IconButton
+                          edge="end"
+                          color="primary"
                           onClick={() => handleDownloadDoc(doc.id, doc.file_name)}
                           sx={{ mr: 1 }}
                         >
@@ -465,19 +465,19 @@ export default function ReportList() {
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
           {selectedReport && <>
             <Typography variant="body2" gutterBottom>Report: <strong>{selectedReport.report_number}</strong></Typography>
-            <input type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" onChange={(e) => setSelectedFiles(Array.from(e.target.files))} style={{display:"none"}} id="file-input" />
+            <input type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" onChange={(e) => setSelectedFiles(Array.from(e.target.files))} style={{ display: "none" }} id="file-input" />
             <label htmlFor="file-input">
-              <Button variant="outlined" component="span" fullWidth sx={{mt:2}}>Select Files</Button>
+              <Button variant="outlined" component="span" fullWidth sx={{ mt: 2 }}>Select Files</Button>
             </label>
             {selectedFiles.length > 0 && (
-              <List dense sx={{mt:2}}>
+              <List dense sx={{ mt: 2 }}>
                 {selectedFiles.map((f, i) => <ListItem key={i}><ListItemText primary={f.name} secondary={`${(f.size / 1024).toFixed(2)} KB`} /></ListItem>)}
               </List>
             )}
           </>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {setUploadDialog(false); setSelectedFiles([]);}}>Cancel</Button>
+          <Button onClick={() => { setUploadDialog(false); setSelectedFiles([]); }}>Cancel</Button>
           <Button onClick={handleUpload} variant="contained" disabled={selectedFiles.length === 0}>Upload ({selectedFiles.length})</Button>
         </DialogActions>
       </Dialog>
@@ -487,7 +487,7 @@ export default function ReportList() {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>Delete report {selectedReport?.report_number}?</Typography>
-          <Alert severity="warning" sx={{mt:2}}>All documents will be deleted</Alert>
+          <Alert severity="warning" sx={{ mt: 2 }}>All documents will be deleted</Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialog(false)}>Cancel</Button>
