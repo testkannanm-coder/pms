@@ -112,6 +112,27 @@ CREATE TABLE bills (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE reports (
+    id SERIAL PRIMARY KEY,
+    report_number VARCHAR(50) UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    appointment_id INTEGER NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    report_type VARCHAR(100) NOT NULL,
+    report_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE report_documents (
+    id SERIAL PRIMARY KEY,
+    report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_type VARCHAR(100),
+    file_size BIGINT,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX idx_patients_user_id ON patients(user_id);
 CREATE INDEX idx_patients_status ON patients(status);
 CREATE INDEX idx_patients_name ON patients(name);
@@ -128,6 +149,8 @@ CREATE INDEX idx_activity_logs_entity ON activity_logs(entity_type, entity_id);
 CREATE INDEX idx_bills_patient_id ON bills(patient_id);
 CREATE INDEX idx_bills_appointment_id ON bills(appointment_id);
 CREATE INDEX idx_bills_payment_status ON bills(payment_status);
+CREATE INDEX idx_reports_appointment_id ON reports(appointment_id);
+CREATE INDEX idx_report_documents_report_id ON report_documents(report_id);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -153,6 +176,9 @@ CREATE TRIGGER update_prescriptions_updated_at BEFORE UPDATE ON prescriptions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_bills_updated_at BEFORE UPDATE ON bills
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_reports_updated_at BEFORE UPDATE ON reports
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 INSERT INTO users (name, email, password, role) VALUES

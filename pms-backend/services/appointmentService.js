@@ -7,7 +7,8 @@ class AppointmentService {
     try {
       const result = await pool.query(`
         SELECT a.*, p.name as patient_name, p.phone as patient_phone,
-               u.name as doctor_name
+               u.name as doctor_name,
+               (SELECT COUNT(*) FROM reports r WHERE r.appointment_id = a.id) as report_count
         FROM appointments a
         LEFT JOIN patients p ON a.patient_id = p.id
         LEFT JOIN users u ON a.doctor_id = u.id

@@ -5,6 +5,7 @@ import {
   deleteAppointment,
   changeAppointmentStatus,
 } from "../../api/appointmentApi";
+import { getReportsByAppointment } from "../../api/reportApi";
 import { AuthContext } from "../../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -41,6 +42,8 @@ export default function AppointmentList() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [reportsDialogOpen, setReportsDialogOpen] = useState(false);
+  const [appointmentReports, setAppointmentReports] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [newStatus, setNewStatus] = useState("");
 
@@ -142,6 +145,19 @@ export default function AppointmentList() {
       rescheduled: "warning",
     };
     return colors[status] || "default";
+  };
+
+  const handleViewReports = async (apt) => {
+    try {
+      setSelectedAppointment(apt);
+      const token = getToken();
+      const result = await getReportsByAppointment(apt.id, token);
+      setAppointmentReports(result.data || []);
+      setReportsDialogOpen(true);
+    } catch (err) {
+      setError("Failed to load reports");
+      console.error(err);
+    }
   };
 
   if (loading && appointments.length === 0) {
@@ -252,6 +268,15 @@ export default function AppointmentList() {
                       </Button>
                     )}
                     <Button
+                      onClick={() => handleViewReports(apt)}
+                      variant="outlined"
+                      color="secondary"
+                      size="small"
+                      sx={{ mr: 1, mb: 0.5 }}
+                    >
+                      Reports ({apt.report_count || 0})
+                    </Button>
+                    <Button
                       onClick={() => handleDeleteClick(apt)}
                       variant="outlined"
                       color="error"
@@ -357,6 +382,48 @@ export default function AppointmentList() {
           >
             Change Status
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={reportsDialogOpen}
+        onClose={() => setReportsDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Reports for Appointment - {selectedAppointment?.patient_name}
+        </DialogTitle>
+        <DialogContent>
+          {appointmentReports.length === 0 ? (
+            <Alert severity="info">No reports uploaded for this appointment</Alert>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Report #</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Doctor</TableCell>
+                  <TableCell>Documents</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {appointmentReports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell>{report.report_number}</TableCell>
+                    <TableCell>{report.report_type}</TableCell>
+                    <TableCell>{new Date(report.report_date).toLocaleDateString()}</TableCell>
+                    <TableCell>{report.doctor_name || "N/A"}</TableCell>
+                    <TableCell>{report.documents?.length || 0} files</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReportsDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Paper>
