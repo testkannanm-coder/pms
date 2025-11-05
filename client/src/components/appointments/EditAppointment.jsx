@@ -290,7 +290,7 @@ export default function EditAppointment() {
             <MenuItem value="scheduled">Scheduled</MenuItem>
             <MenuItem value="completed">Completed</MenuItem>
             <MenuItem value="cancelled">Cancelled</MenuItem>
-            <MenuItem value="rescheduled">Rescheduled</MenuItem>
+            <MenuItem value="rescheduled">Revisit</MenuItem>
           </TextField>
         )}
 

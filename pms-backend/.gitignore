@@ -48,3 +48,6 @@ coverage/
 
 # Debug
 .vscode/launch.json
+
+#uploaded reports 
+uploads/

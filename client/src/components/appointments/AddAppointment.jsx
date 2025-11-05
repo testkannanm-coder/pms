@@ -263,7 +263,7 @@ export default function AddAppointment() {
             
           </Box>
 
-          <Box >
+          <Box sx={{ display: "none" }}>
             <TextField
               select
               label="Status"
@@ -274,7 +274,6 @@ export default function AddAppointment() {
               onChange={handleChange}
             >
               <MenuItem value="scheduled">Scheduled</MenuItem>
-              <MenuItem value="rescheduled">Rescheduled</MenuItem>
             </TextField>
           </Box>
 

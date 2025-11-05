@@ -137,7 +137,6 @@ export default function AddPatient() {
           />
         </Box>
 
-        {/* Gender & Blood Type */}
         <Box sx={{ display: "flex", gap: 2 }}>
           <TextField
             select
