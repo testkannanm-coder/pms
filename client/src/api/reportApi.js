@@ -76,3 +76,19 @@ export const downloadReportDocument = async (documentId, fileName, token) => {
   
   return { success: true, message: 'File downloaded successfully' };
 };
+
+export const previewReportDocument = async (documentId, token) => {
+  const response = await axios.get(`${API_URL}/reports/documents/${documentId}/download`, {
+    headers: { Authorization: `Bearer ${token}` },
+    responseType: 'blob',
+  });
+  
+  // Get content type from response or default to application/octet-stream
+  const contentType = response.headers['content-type'] || 'application/octet-stream';
+  
+  // Create a blob with the correct MIME type
+  const blob = new Blob([response.data], { type: contentType });
+  const url = window.URL.createObjectURL(blob);
+  
+  return { url, contentType, blob };
+};

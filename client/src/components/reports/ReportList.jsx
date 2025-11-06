@@ -33,6 +33,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import CloseIcon from "@mui/icons-material/Close";
+import PreviewIcon from "@mui/icons-material/Preview";
 import { AuthContext } from "../../context/AuthContext";
 import { getAppointments } from "../../api/appointmentApi";
 import {
@@ -43,6 +44,7 @@ import {
   uploadReportDocuments,
   downloadReportDocument,
   deleteReportDocument,
+  previewReportDocument,
 } from "../../api/reportApi";
 
 export default function ReportList() {
@@ -56,8 +58,10 @@ export default function ReportList() {
   const [viewDialog, setViewDialog] = useState(false);
   const [uploadDialog, setUploadDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
+  const [previewDialog, setPreviewDialog] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const [formData, setFormData] = useState({
     appointment_id: "",
@@ -220,6 +224,35 @@ export default function ReportList() {
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
+  };
+
+  const handlePreviewDoc = async (docId, fileName) => {
+    try {
+      const token = getToken();
+      const { url, contentType } = await previewReportDocument(docId, token);
+      
+      // Check if it's a supported preview type
+      const fileExt = fileName.toLowerCase().split('.').pop();
+      const supportedPreviewTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+      
+      if (supportedPreviewTypes.includes(fileExt)) {
+        setPreviewUrl({ url, fileName, contentType });
+        setPreviewDialog(true);
+      } else {
+        // For unsupported types, open in new tab
+        window.open(url, '_blank');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to preview document");
+    }
+  };
+
+  const handleClosePreview = () => {
+    if (previewUrl?.url) {
+      window.URL.revokeObjectURL(previewUrl.url);
+    }
+    setPreviewUrl(null);
+    setPreviewDialog(false);
   };
 
   if (loading)
@@ -503,14 +536,23 @@ export default function ReportList() {
                         secondary={`${(doc.file_size / 1024).toFixed(2)} KB`}
                       />
                       <IconButton
+                        color="info"
+                        onClick={() => handlePreviewDoc(doc.id, doc.file_name)}
+                        title="Preview"
+                      >
+                        <PreviewIcon />
+                      </IconButton>
+                      <IconButton
                         color="primary"
                         onClick={() => handleDownloadDoc(doc.id, doc.file_name)}
+                        title="Download"
                       >
                         <DownloadIcon />
                       </IconButton>
                       <IconButton
                         color="error"
                         onClick={() => handleDeleteDoc(doc.id)}
+                        title="Delete"
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -614,6 +656,102 @@ export default function ReportList() {
           <Button onClick={handleDelete} variant="contained" color="error">
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog
+        open={previewDialog}
+        onClose={handleClosePreview}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Preview: {previewUrl?.fileName}
+          <IconButton
+            onClick={handleClosePreview}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ minHeight: '70vh', display: 'flex', justifyContent: 'center', alignItems: 'center', p: 0 }}>
+          {previewUrl && (
+            <>
+              {previewUrl.contentType?.startsWith('image/') ? (
+                <Box
+                  component="img"
+                  src={previewUrl.url}
+                  alt={previewUrl.fileName}
+                  sx={{
+                    maxWidth: '100%',
+                    maxHeight: '70vh',
+                    objectFit: 'contain',
+                    p: 2,
+                  }}
+                />
+              ) : previewUrl.fileName?.toLowerCase().endsWith('.pdf') || previewUrl.contentType === 'application/pdf' ? (
+                <Box sx={{ width: '100%', height: '70vh', position: 'relative' }}>
+                  <object
+                    data={`${previewUrl.url}#toolbar=0&navpanes=0&scrollbar=1`}
+                    type="application/pdf"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 'none' }}
+                  >
+                    <iframe
+                      src={`${previewUrl.url}#toolbar=0&navpanes=0&scrollbar=1`}
+                      title={previewUrl.fileName}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 'none' }}
+                    >
+                      <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography variant="body1" color="textSecondary" gutterBottom>
+                          Unable to display PDF in browser.
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          startIcon={<DownloadIcon />}
+                          onClick={() => window.open(previewUrl.url, '_blank')}
+                          sx={{ mt: 2 }}
+                        >
+                          Open in New Tab
+                        </Button>
+                      </Box>
+                    </iframe>
+                  </object>
+                </Box>
+              ) : (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography color="textSecondary" gutterBottom>
+                    Preview not available for this file type
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    onClick={() => window.open(previewUrl.url, '_blank')}
+                    sx={{ mt: 2 }}
+                  >
+                    Open in New Tab
+                  </Button>
+                </Box>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePreview} variant="outlined">
+            Close
+          </Button>
+          {previewUrl && (
+            <Button
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              onClick={() => window.open(previewUrl.url, '_blank')}
+            >
+              Open in New Tab
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
