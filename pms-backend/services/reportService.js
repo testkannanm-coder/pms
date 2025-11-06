@@ -1,10 +1,11 @@
 const pool = require("../config/db");
+const fs = require("fs");
 
 class ReportService {
   async generateReportNumber() {
     const result = await pool.query("SELECT COUNT(*) as count FROM reports");
     const count = parseInt(result.rows[0].count) + 1;
-    return `REP${count.toString().padStart(6, "0")}`;
+    return `REP${count.toString().padStart(2, "0")}`;
   }
 
   async getAllReports() {
@@ -78,7 +79,24 @@ class ReportService {
   }
 
   async deleteReport(id) {
+    const documentsResult = await pool.query(
+      "SELECT file_path FROM report_documents WHERE report_id = $1",
+      [id]
+    );
+    
+    for (const doc of documentsResult.rows) {
+      if (doc.file_path && fs.existsSync(doc.file_path)) {
+        try {
+          fs.unlinkSync(doc.file_path);
+          console.log(`Deleted file: ${doc.file_path}`);
+        } catch (err) {
+          console.error(`Failed to delete file: ${doc.file_path}`, err);
+        }
+      }
+    }
+    
     await pool.query("DELETE FROM report_documents WHERE report_id = $1", [id]);
+    
     const result = await pool.query("DELETE FROM reports WHERE id = $1 RETURNING *", [id]);
     return result.rows[0];
   }
