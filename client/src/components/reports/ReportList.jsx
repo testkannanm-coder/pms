@@ -89,19 +89,17 @@ export default function ReportList() {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
       const token = getToken();
       const [reportsRes, appointmentsRes] = await Promise.all([
         getReports(token),
         getAppointments(token),
       ]);
+
       setReports(reportsRes.data || []);
       setAppointments(appointmentsRes || []);
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err.message || "Failed to load data");
-    } finally {
-      setLoading(false);
     }
   };
 
