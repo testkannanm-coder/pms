@@ -12,7 +12,6 @@ import {
   Paper,
   IconButton,
   Alert,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -27,19 +26,20 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import DownloadIcon from "@mui/icons-material/Download";
-import CloseIcon from "@mui/icons-material/Close";
-import PreviewIcon from "@mui/icons-material/Preview";
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  UploadFile as UploadFileIcon,
+  Download as DownloadIcon,
+  Close as CloseIcon,
+  Preview as PreviewIcon,
+} from "@mui/icons-material";
 import { AuthContext } from "../../context/AuthContext";
 import { getAppointments } from "../../api/appointmentApi";
 import {
   getReports,
   createReport,
-  updateReport,
   deleteReport,
   uploadReportDocuments,
   downloadReportDocument,
@@ -51,7 +51,6 @@ export default function ReportList() {
   const { getToken } = useContext(AuthContext);
   const [reports, setReports] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
@@ -413,13 +412,6 @@ export default function ReportList() {
     }
   }, [previewDialog, tiffCanvas]);
 
-  if (loading)
-    return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
-      </Box>
-    );
-
   return (
     <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" mb={3}>
@@ -444,6 +436,7 @@ export default function ReportList() {
         </Alert>
       )}
 
+      {/* Table */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead sx={{ bgcolor: "primary.main" }}>
@@ -516,6 +509,7 @@ export default function ReportList() {
         </Table>
       </TableContainer>
 
+      {/* Add Report */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
@@ -650,6 +644,7 @@ export default function ReportList() {
         </form>
       </Dialog>
 
+      {/* View Report  */}
       <Dialog
         open={viewDialog}
         onClose={() => setViewDialog(false)}
@@ -675,9 +670,7 @@ export default function ReportList() {
                 {new Date(selectedReport.report_date).toLocaleDateString()}
               </Typography>
               <Divider sx={{ my: 1 }} />
-              <Typography variant="h6">
-                Attached Documents ({selectedReport.documents?.length || 0})
-              </Typography>
+              <Typography variant="h6">Attached Documents:</Typography>
               {selectedReport.documents?.length > 0 ? (
                 <List>
                   {selectedReport.documents.map((doc) => (
@@ -712,7 +705,7 @@ export default function ReportList() {
                 </List>
               ) : (
                 <Typography color="textSecondary" align="center">
-                  No documents
+                  No documents Attached
                 </Typography>
               )}
             </Box>
@@ -725,6 +718,7 @@ export default function ReportList() {
         </DialogActions>
       </Dialog>
 
+      {/* Upload  */}
       <Dialog
         open={uploadDialog}
         onClose={() => setUploadDialog(false)}
@@ -790,7 +784,7 @@ export default function ReportList() {
         </DialogActions>
       </Dialog>
 
-      {/* Preview Dialog */}
+      {/* Preview */}
       <Dialog
         open={previewDialog}
         onClose={handleClosePreview}
