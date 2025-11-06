@@ -57,7 +57,6 @@ export default function ReportList() {
   const [openDialog, setOpenDialog] = useState(false);
   const [viewDialog, setViewDialog] = useState(false);
   const [uploadDialog, setUploadDialog] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState(false);
   const [previewDialog, setPreviewDialog] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -172,13 +171,16 @@ export default function ReportList() {
     }
   };
 
-  // no need dialog for simple delete confirmation
-  const handleDelete = async () => {
+  const handleDelete = async (report) => {
+    const confirmed = window.confirm(`Are you sure you want to delete report `);
+
+    if (!confirmed) return;
+
     try {
       setError("");
       const token = getToken();
-      await deleteReport(selectedReport.id, token);
-      setSuccess("Report deleted");
+      await deleteReport(report.id, token);
+      setSuccess("Report deleted successfully");
       await fetchData();
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -491,10 +493,7 @@ export default function ReportList() {
                     <IconButton
                       size="small"
                       color="secondary"
-                      onClick={() => {
-                        setSelectedReport(r);
-                        setDeleteDialog(true);
-                      }}
+                      onClick={() => handleDelete(r)}
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -517,7 +516,6 @@ export default function ReportList() {
         </Table>
       </TableContainer>
 
-      {/* Add Report Dialog */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
@@ -643,7 +641,6 @@ export default function ReportList() {
               </List>
             )}
           </DialogContent>
-
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancel</Button>
             <Button type="submit" variant="contained">
@@ -653,7 +650,6 @@ export default function ReportList() {
         </form>
       </Dialog>
 
-      {/* View Report Dialog */}
       <Dialog
         open={viewDialog}
         onClose={() => setViewDialog(false)}
@@ -678,7 +674,6 @@ export default function ReportList() {
                 <strong>Date:</strong>{" "}
                 {new Date(selectedReport.report_date).toLocaleDateString()}
               </Typography>
-
               <Divider sx={{ my: 1 }} />
               <Typography variant="h6">
                 Attached Documents ({selectedReport.documents?.length || 0})
@@ -730,7 +725,6 @@ export default function ReportList() {
         </DialogActions>
       </Dialog>
 
-      {/* Upload Dialog */}
       <Dialog
         open={uploadDialog}
         onClose={() => setUploadDialog(false)}
@@ -792,25 +786,6 @@ export default function ReportList() {
             disabled={selectedFiles.length === 0}
           >
             Upload ({selectedFiles.length})
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Delete report {selectedReport?.report_number}?
-          </Typography>
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            All documents will be deleted.
-          </Alert>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialog(false)}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error">
-            Delete
           </Button>
         </DialogActions>
       </Dialog>
@@ -884,17 +859,6 @@ export default function ReportList() {
                           borderRadius: 1,
                           boxShadow: 1,
                         }}
-                        onLoad={() =>
-                          console.log(
-                            `TIFF page ${page.pageNumber} loaded successfully`
-                          )
-                        }
-                        onError={(e) =>
-                          console.error(
-                            `TIFF page ${page.pageNumber} failed to load`,
-                            e
-                          )
-                        }
                       />
                     </Box>
                   ))}
