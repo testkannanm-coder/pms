@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useContext } from "react";
+﻿import { useState, useEffect, useContext, useRef } from "react";
 import {
   Box,
   Typography,
@@ -62,6 +62,9 @@ export default function ReportList() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [tiffCanvas, setTiffCanvas] = useState(null);
+  const [tiffPages, setTiffPages] = useState([]);
+  const canvasRef = useRef(null);
 
   const [formData, setFormData] = useState({
     appointment_id: "",
@@ -229,20 +232,183 @@ export default function ReportList() {
   const handlePreviewDoc = async (docId, fileName) => {
     try {
       const token = getToken();
-      const { url, contentType } = await previewReportDocument(docId, token);
+      const { url, contentType, blob } = await previewReportDocument(docId, token);
       
       // Check if it's a supported preview type
       const fileExt = fileName.toLowerCase().split('.').pop();
-      const supportedPreviewTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+      console.log('Preview file:', fileName, 'Extension:', fileExt, 'Content-Type:', contentType);
+      
+      const supportedPreviewTypes = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tif', 'tiff'];
       
       if (supportedPreviewTypes.includes(fileExt)) {
-        setPreviewUrl({ url, fileName, contentType });
-        setPreviewDialog(true);
+        // Handle TIFF files specially
+        if (fileExt === 'tif' || fileExt === 'tiff') {
+          try {
+            // Dynamically import UTIF
+            const UTIF = (await import('utif')).default;
+            
+            // Read blob as array buffer
+            const arrayBuffer = await blob.arrayBuffer();
+            
+            console.log("TIFF ArrayBuffer size:", arrayBuffer.byteLength);
+            
+            if (arrayBuffer.byteLength === 0) {
+              throw new Error("Empty file received");
+            }
+            
+            // Check if it's actually a TIFF file by magic bytes
+            const view = new DataView(arrayBuffer);
+            const byte1 = view.getUint8(0);
+            const byte2 = view.getUint8(1);
+            
+            // TIFF: 0x49 0x49 (little-endian) or 0x4D 0x4D (big-endian)
+            const isTiff = (byte1 === 0x49 && byte2 === 0x49) || (byte1 === 0x4D && byte2 === 0x4D);
+            // JPEG: 0xFF 0xD8
+            const isJpeg = byte1 === 0xFF && byte2 === 0xD8;
+            // PNG: 0x89 0x50
+            const isPng = byte1 === 0x89 && byte2 === 0x50;
+            // GIF: 0x47 0x49 (GI)
+            const isGif = byte1 === 0x47 && byte2 === 0x49;
+            
+            console.log("File magic bytes:", '0x' + byte1.toString(16).padStart(2, '0'), '0x' + byte2.toString(16).padStart(2, '0'));
+            console.log("Detected - TIFF:", isTiff, "JPEG:", isJpeg, "PNG:", isPng, "GIF:", isGif);
+            
+            // If it's actually a JPEG, PNG or GIF with .tif/.tiff extension, handle as regular image
+            if (isJpeg || isPng || isGif) {
+              const actualType = isJpeg ? "JPEG" : isPng ? "PNG" : "GIF";
+              console.warn(`File has .${fileExt} extension but is actually ${actualType}`);
+              
+              // Create a blob URL with the correct MIME type
+              const correctBlob = new Blob([arrayBuffer], { 
+                type: isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/gif' 
+              });
+              const correctUrl = window.URL.createObjectURL(correctBlob);
+              
+              // Clean up the original URL
+              if (url) window.URL.revokeObjectURL(url);
+              
+              setTiffCanvas(null);
+              setPreviewUrl({ url: correctUrl, fileName, contentType: correctBlob.type, isTiff: false });
+              setPreviewDialog(true);
+              return;
+            }
+            
+            if (!isTiff) {
+              throw new Error(`File does not appear to be a valid TIFF or common image format. Magic bytes: 0x${byte1.toString(16)} 0x${byte2.toString(16)}`);
+            }
+            
+            // Decode TIFF using UTIF
+            console.log("Decoding TIFF file...");
+            const ifds = UTIF.decode(arrayBuffer);
+            
+            console.log("TIFF IFDs decoded:", ifds?.length, "pages");
+            
+            if (!ifds || ifds.length === 0) {
+              throw new Error("No image data found in TIFF file");
+            }
+            
+            // Process all pages
+            const pageDataUrls = [];
+            
+            for (let i = 0; i < ifds.length; i++) {
+              const page = ifds[i];
+              console.log(`Processing TIFF page ${i + 1}/${ifds.length}`, {
+                width: page.width,
+                height: page.height,
+                t256: page.t256,
+                t257: page.t257
+              });
+              
+              UTIF.decodeImage(arrayBuffer, page);
+              
+              // TIFF width/height can be in different places
+              let width = page.width;
+              let height = page.height;
+              
+              // If not in width/height, try t256/t257 tags
+              if (!width && page.t256) {
+                width = Array.isArray(page.t256) ? page.t256[0] : page.t256;
+              }
+              if (!height && page.t257) {
+                height = Array.isArray(page.t257) ? page.t257[0] : page.t257;
+              }
+              
+              console.log(`Page ${i + 1} dimensions:`, width, "x", height);
+              
+              // Validate dimensions
+              if (!width || !height || width <= 0 || height <= 0) {
+                console.error(`Invalid dimensions for page ${i + 1}, skipping`);
+                continue;
+              }
+              
+              // Create canvas and render
+              const canvas = document.createElement('canvas');
+              canvas.width = width;
+              canvas.height = height;
+              
+              const ctx = canvas.getContext('2d');
+              if (!ctx) {
+                console.error(`Failed to get canvas context for page ${i + 1}`);
+                continue;
+              }
+              
+              const rgba = UTIF.toRGBA8(page);
+              
+              console.log(`Page ${i + 1} RGBA buffer length:`, rgba?.length, "Expected:", width * height * 4);
+              
+              if (!rgba || rgba.length === 0) {
+                console.error(`Failed to convert page ${i + 1} to RGBA`);
+                continue;
+              }
+              
+              const imageData = ctx.createImageData(width, height);
+              
+              // Set the RGBA data
+              imageData.data.set(new Uint8ClampedArray(rgba));
+              
+              ctx.putImageData(imageData, 0, 0);
+              
+              // Convert canvas to data URL
+              const canvasDataURL = canvas.toDataURL('image/png');
+              pageDataUrls.push({
+                url: canvasDataURL,
+                pageNumber: i + 1,
+                width,
+                height
+              });
+              
+              console.log(`Page ${i + 1} canvas created successfully`);
+            }
+            
+            console.log(`Total pages processed: ${pageDataUrls.length}`);
+            
+            if (pageDataUrls.length === 0) {
+              throw new Error("No valid pages found in TIFF file");
+            }
+            
+            setTiffPages(pageDataUrls);
+            setPreviewUrl({ url: pageDataUrls[0].url, fileName, contentType, isTiff: true, totalPages: pageDataUrls.length });
+            setPreviewDialog(true);
+            
+            // Clean up the blob URL since we're using canvas
+            if (url) window.URL.revokeObjectURL(url);
+          } catch (tiffError) {
+            console.error("TIFF rendering error:", tiffError);
+            console.error("Error stack:", tiffError.stack);
+            setError(`Unable to preview TIFF file: ${tiffError.message}`);
+            if (url) window.URL.revokeObjectURL(url);
+          }
+        } else {
+          setTiffCanvas(null);
+          setPreviewUrl({ url, fileName, contentType, isTiff: false });
+          setPreviewDialog(true);
+        }
       } else {
         // For unsupported types, open in new tab
         window.open(url, '_blank');
       }
     } catch (err) {
+      console.error("Preview error:", err);
       setError(err.response?.data?.message || err.message || "Failed to preview document");
     }
   };
@@ -252,8 +418,48 @@ export default function ReportList() {
       window.URL.revokeObjectURL(previewUrl.url);
     }
     setPreviewUrl(null);
+    setTiffCanvas(null);
+    setTiffPages([]);
     setPreviewDialog(false);
   };
+
+  // Effect to render TIFF canvas when dialog opens
+  useEffect(() => {
+    if (previewDialog && tiffCanvas && canvasRef.current) {
+      console.log("Appending TIFF canvas to DOM", {
+        canvasWidth: tiffCanvas.width,
+        canvasHeight: tiffCanvas.height,
+        hasContext: !!tiffCanvas.getContext('2d'),
+        canvasDataURL: tiffCanvas.toDataURL('image/png').substring(0, 50) + '...'
+      });
+      
+      // Clear any existing content
+      canvasRef.current.innerHTML = '';
+      
+      // Add some inline styles to ensure visibility
+      tiffCanvas.style.display = 'block';
+      tiffCanvas.style.margin = 'auto';
+      tiffCanvas.style.maxWidth = '100%';
+      tiffCanvas.style.height = 'auto';
+      tiffCanvas.style.border = '1px solid #ddd';
+      
+      // Append the TIFF canvas
+      canvasRef.current.appendChild(tiffCanvas);
+      
+      console.log("Canvas appended successfully", {
+        children: canvasRef.current.children.length,
+        firstChild: canvasRef.current.children[0]?.tagName
+      });
+      
+      // Verify the canvas has pixel data
+      const ctx = tiffCanvas.getContext('2d');
+      if (ctx) {
+        const imageData = ctx.getImageData(0, 0, Math.min(10, tiffCanvas.width), Math.min(10, tiffCanvas.height));
+        const hasData = imageData.data.some(val => val !== 0);
+        console.log("Canvas has pixel data:", hasData, "Sample pixels:", Array.from(imageData.data.slice(0, 20)));
+      }
+    }
+  }, [previewDialog, tiffCanvas]);
 
   if (loading)
     return (
@@ -444,7 +650,7 @@ export default function ReportList() {
               id="file-upload-input"
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.tif,.tiff"
               onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
               style={{ display: "none" }}
             />
@@ -591,7 +797,7 @@ export default function ReportList() {
               <input
                 type="file"
                 multiple
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.tif,.tiff"
                 onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
                 style={{ display: "none" }}
                 id="file-input"
@@ -668,6 +874,11 @@ export default function ReportList() {
       >
         <DialogTitle>
           Preview: {previewUrl?.fileName}
+          {previewUrl?.isTiff && previewUrl?.totalPages > 1 && (
+            <Typography component="span" variant="body2" color="textSecondary" sx={{ ml: 2 }}>
+              ({previewUrl.totalPages} pages)
+            </Typography>
+          )}
           <IconButton
             onClick={handleClosePreview}
             sx={{ position: 'absolute', right: 8, top: 8 }}
@@ -678,7 +889,34 @@ export default function ReportList() {
         <DialogContent sx={{ minHeight: '70vh', display: 'flex', justifyContent: 'center', alignItems: 'center', p: 0 }}>
           {previewUrl && (
             <>
-              {previewUrl.contentType?.startsWith('image/') ? (
+              {previewUrl.isTiff ? (
+                <Box sx={{ width: '100%', height: '70vh', overflow: 'auto', p: 2, backgroundColor: '#f5f5f5' }}>
+                  {tiffPages.map((page, index) => (
+                    <Box key={index} sx={{ mb: 3, textAlign: 'center' }}>
+                      {tiffPages.length > 1 && (
+                        <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1 }}>
+                          Page {page.pageNumber} of {tiffPages.length}
+                        </Typography>
+                      )}
+                      <Box
+                        component="img"
+                        src={page.url}
+                        alt={`${previewUrl.fileName} - Page ${page.pageNumber}`}
+                        sx={{
+                          maxWidth: '100%',
+                          height: 'auto',
+                          border: '1px solid #ddd',
+                          borderRadius: 1,
+                          boxShadow: 1,
+                        }}
+                        onLoad={() => console.log(`TIFF page ${page.pageNumber} loaded successfully`)}
+                        onError={(e) => console.error(`TIFF page ${page.pageNumber} failed to load`, e)}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              ) : (previewUrl.contentType?.startsWith('image/') || 
+                previewUrl.fileName?.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp)$/)) ? (
                 <Box
                   component="img"
                   src={previewUrl.url}
