@@ -34,9 +34,10 @@ function IncidentDetail() {
   const [previewType, setPreviewType] = useState("");
   const [previewName, setPreviewName] = useState("");
   const [tiffPages, setTiffPages] = useState([]);
-  const [tiffTotalPages, setTiffTotalPages] = useState(0);
   const [loadingTiff, setLoadingTiff] = useState(false);
   const [tiffError, setTiffError] = useState(null);
+  const [tiffTotalPages, setTiffTotalPages] = useState(0);
+  const [tiffHasMorePages, setTiffHasMorePages] = useState(false);
 
   useEffect(() => {
     const fetchIncidentDetails = async () => {
@@ -136,9 +137,10 @@ function IncidentDetail() {
     setPreviewType(type);
     setPreviewVisible(true);
     setTiffPages([]);
-    setTiffTotalPages(0);
     setTiffError(null);
     setPreviewUrl("");
+    setTiffTotalPages(0);
+    setTiffHasMorePages(false);
 
     try {
       // Fetch file from server
@@ -213,11 +215,13 @@ function IncidentDetail() {
             return;
           }
 
-          const { pages, totalPages } = await decodeTiff(arrayBuffer, 5);
+          // Decode TIFF pages (limited to first 5 pages for performance)
+          const result = await decodeTiff(arrayBuffer);
 
-          if (pages && pages.length > 0) {
-            setTiffPages(pages);
-            setTiffTotalPages(totalPages);
+          if (result && result.pages && result.pages.length > 0) {
+            setTiffPages(result.pages);
+            setTiffTotalPages(result.totalPages);
+            setTiffHasMorePages(result.hasMorePages);
           } else {
             setTiffError("No pages could be decoded from TIFF file");
           }
@@ -241,9 +245,10 @@ function IncidentDetail() {
     setPreviewType("");
     setPreviewName("");
     setTiffPages([]);
-    setTiffTotalPages(0);
     setTiffError(null);
     setLoadingTiff(false);
+    setTiffTotalPages(0);
+    setTiffHasMorePages(false);
   };
 
   // Cleanup blob URLs on component unmount
@@ -782,7 +787,7 @@ function IncidentDetail() {
                 <div style={{ textAlign: "center", padding: "40px" }}>
                   <GradientCircularProgress />
                   <p style={{ marginTop: "10px", color: "#666" }}>
-                    Loading file
+                    Loading TIFF file...
                   </p>
                 </div>
               )}
@@ -803,35 +808,21 @@ function IncidentDetail() {
 
               {!loadingTiff && !tiffError && tiffPages.length > 0 && (
                 <>
-                  {tiffTotalPages > 5 && (
+                  {tiffHasMorePages && (
                     <div
                       style={{
                         backgroundColor: "#f8f9fa",
                         border: "1px solid red",
                         borderRadius: "4px",
-                        padding: "10px 14px",
+                        padding: "12px 16px",
                         marginBottom: "16px",
                         color: "red",
-                        fontSize: "13px",
+                        fontSize: "14px",
+                        textAlign: "center",
                       }}
                     >
-                      Displaying the first 5 of {tiffTotalPages} pages.{" "}
-                      <a
-                        href="#download"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleDownload(previewName);
-                        }}
-                        style={{
-                          color: "#007bff",
-                          textDecoration: "underline",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Click here
-                      </a>{" "}
-                      to download the full document.
+                      Showing first 5 of {tiffTotalPages} pages. Download the
+                      file to view all pages.
                     </div>
                   )}
                   <div
@@ -854,22 +845,6 @@ function IncidentDetail() {
                             index < tiffPages.length - 1 ? "20px" : "0",
                         }}
                       >
-                        {tiffPages.length > 1 && (
-                          <div
-                            style={{
-                              textAlign: "center",
-                              fontWeight: "600",
-                              color: "#666",
-                              marginBottom: "8px",
-                              fontSize: "14px",
-                            }}
-                          >
-                            Page {page.pageNumber}
-                            {tiffTotalPages > 5
-                              ? ` of ${tiffTotalPages}`
-                              : ""}
-                          </div>
-                        )}
                         <div style={{ textAlign: "center" }}>
                           <img
                             src={page.dataUrl}
